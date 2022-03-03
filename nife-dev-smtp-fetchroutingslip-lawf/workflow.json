@@ -1,0 +1,173 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Try": {
+                "type": "Scope",
+                "actions": {
+                    "Response": {
+                        "type": "Response",
+                        "kind": "http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": "@json(concat('[',base64ToString(replace(body('Get_routing_slip_Content')?['$content'],'77u/','')),']'))"
+                        },
+                        "runAfter": {
+                            "Get_blob_content_(V2)": [
+                                "Succeeded"
+                            ]
+                        },
+                        "description": "Get Blob content from routingslip container based on the applicationName and interfaceName"
+                    },
+                    "Get_blob_content_(V2)": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "azureblob_2"
+                                }
+                            },
+                            "method": "get",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('nifesmtproutingslips'))}/files/@{encodeURIComponent(encodeURIComponent(concat('/routingslips',triggerBody()?['routingHeader']?['applicationName'],'-',triggerBody()?['routingHeader']?['interfaceName'],'.JSON')))}/content",
+                            "queries": {
+                                "inferContentType": true
+                            }
+                        },
+                        "runAfter": {}
+                    }
+                },
+                "runAfter": {}
+            },
+            "Catch": {
+                "type": "Scope",
+                "actions": {
+                    "Filter_array": {
+                        "type": "Query",
+                        "inputs": {
+                            "from": "@result('Try')",
+                            "where": "@equals(item()['status'], 'Failed')"
+                        },
+                        "runAfter": {},
+                        "description": "Check status of actions in try scope and filter out the failed actions"
+                    },
+                    "Response_on_Exception": {
+                        "type": "Response",
+                        "kind": "http",
+                        "inputs": {
+                            "statusCode": 500,
+                            "body": "RunTime Exception Occurred in Workflow @{workflow().name} for flow. @{body('FILTER_ARRAY')[0]['name']} action execution failed."
+                        },
+                        "runAfter": {
+                            "Filter_array": [
+                                "Succeeded"
+                            ]
+                        },
+                        "description": "Send error response on runtime exception"
+                    }
+                },
+                "runAfter": {
+                    "Try": [
+                        "TIMEDOUT",
+                        "FAILED"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "routingHeader": {
+                                "properties": {
+                                    "applicationName": {
+                                        "type": "string"
+                                    },
+                                    "deletePayload": {
+                                        "type": "boolean"
+                                    },
+                                    "interfaceName": {
+                                        "type": "string"
+                                    },
+                                    "source": {
+                                        "type": "string"
+                                    },
+                                    "sourceConnectorType": {
+                                        "type": "string"
+                                    },
+                                    "sourceMessageType": {
+                                        "type": "string"
+                                    },
+                                    "target": {
+                                        "type": "string"
+                                    },
+                                    "targetConnectorType": {
+                                        "type": "string"
+                                    },
+                                    "targetMessageType": {
+                                        "type": "string"
+                                    },
+                                    "version": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "routingSteps": {
+                                "items": {
+                                    "properties": {
+                                        "isFinalStep": {
+                                            "type": "boolean"
+                                        },
+                                        "stepConfig": {
+                                            "properties": {
+                                                "blobContainer": {
+                                                    "type": "string"
+                                                },
+                                                "queue": {
+                                                    "type": "string"
+                                                },
+                                                "retryCount": {
+                                                    "type": "integer"
+                                                },
+                                                "retryInterval": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "stepName": {
+                                            "type": "string"
+                                        },
+                                        "stepNumber": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "stepName",
+                                        "stepNumber",
+                                        "isFinalStep",
+                                        "stepConfig"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "method": "POST"
+                },
+                "description": "On receiving HTTP request the logic app is triggered"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}

@@ -1,0 +1,128 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Try_Scope": {
+                "type": "Scope",
+                "actions": {
+                    "For_each": {
+                        "type": "Foreach",
+                        "foreach": "@triggerBody()?['attachments']",
+                        "actions": {
+                            "Get_attachment": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "office365"
+                                        }
+                                    },
+                                    "method": "get",
+                                    "path": "/Mail/@{encodeURIComponent(triggerBody()?['id'])}/Attachments/@{encodeURIComponent(items('For_each')?['id'])}"
+                                },
+                                "runAfter": {}
+                            },
+                            "Fetch_Routing_Slip": {
+                              "inputs": {
+                                "body": {
+                                  "routingHeader": {
+                                    "applicationName": "TEST.BLOBAPPLICATION",
+                                    "interfaceName": "Employee"
+                                  }
+                                },
+                                "host": {
+                                  "workflow": {
+                                    "id": "nife-dev-smtp-fetchroutingslip-lawf"
+                                  }
+                                }
+                              },
+                              "runAfter": {
+                                "Get_attachment": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "type": "Workflow"
+                            },
+                            "Create_blob_from_attacment": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "azureblob_1"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "body": "@base64ToBinary(items('For_each')?['contentBytes'])",
+                                    "headers": {
+                                        "ReadFileMetadataFromServer": true,
+                                        "Content-Type": "@items('For_each')?['contentType']"
+                                    },
+                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files",
+                                    "queries": {
+                                        "folderPath": "@{body('Fetch_Routing_Slip')[0].routingSteps[0]['stepConfig']['blobContainer']}",
+                                        "name": "@{concat(triggerBody()?['from'], '-', items('For_each')?['id'], '-', triggerBody()?['receivedDateTime'])}",
+                                        "queryParametersSingleEncoded": true
+                                    }
+                                },
+                                "runAfter": {
+                                    "Fetch_Routing_Slip": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "runtimeConfiguration": {
+                                    "contentTransfer": {
+                                        "transferMode": "Chunked"
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {}
+                    }
+                },
+                "runAfter": {}
+            }
+        },
+        "triggers": {
+            "When_a_specific_email_arrives": {
+                "type": "ApiConnectionNotification",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "office365"
+                        }
+                    },
+                    "fetch": {
+                        "queries": {
+                            "toOrCc": "kuntala.sett@neudesic.com",
+                            "importance": "Any",
+                            "fetchOnlyWithAttachment": true,
+                            "includeAttachments": true,
+                            "subjectFilter": "string('Test Lego Block SMTP')"
+                        },
+                        "pathTemplate": {
+                            "template": "/v3/Mail/OnNewMentionMeEmail"
+                        },
+                        "method": "get"
+                    },
+                    "subscribe": {
+                        "queries": {
+                            "importance": "Any",
+                            "fetchOnlyWithAttachment": true
+                        },
+                        "body": {
+                            "NotificationUrl": "@{listCallbackUrl()}"
+                        },
+                        "pathTemplate": {
+                            "template": "/GraphMentionMeMailSubscriptionPoke/$subscriptions"
+                        },
+                        "method": "post"
+                    }
+                },
+                "splitOn": "@triggerBody()?['value']"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}

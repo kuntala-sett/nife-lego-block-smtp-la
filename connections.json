@@ -1,0 +1,46 @@
+{
+  "managedApiConnections": {
+    "office365": {
+      "api": {
+        "id": "/subscriptions/5f4f7e1e-9ef8-4204-9255-c3bdc6ae6632/providers/Microsoft.Web/locations/westcentralus/managedApis/office365"
+      },
+      "connection": {
+        "id": "/subscriptions/5f4f7e1e-9ef8-4204-9255-c3bdc6ae6632/resourceGroups/NIFE-Lego-Block-SMTP-RG/providers/Microsoft.Web/connections/office365-1"
+      },
+      "connectionRuntimeUrl": "https://6ca248de7b5e1432.16.common.logic-westcentralus.azure-apihub.net/apim/office365/8ad9d7edd314415ea9c8323ed379ef76",
+      "authentication": {
+        "type": "Raw",
+        "scheme": "Key",
+        "parameter": "@appsetting('office365-connectionKey')"
+      }
+    },
+    "azureblob_1": {
+      "api": {
+        "id": "/subscriptions/5f4f7e1e-9ef8-4204-9255-c3bdc6ae6632/providers/Microsoft.Web/locations/westcentralus/managedApis/azureblob"
+      },
+      "connection": {
+        "id": "/subscriptions/5f4f7e1e-9ef8-4204-9255-c3bdc6ae6632/resourceGroups/NIFE-Lego-Block-SMTP-RG/providers/Microsoft.Web/connections/azureblob-2"
+      },
+      "connectionRuntimeUrl": "https://6ca248de7b5e1432.16.common.logic-westcentralus.azure-apihub.net/apim/azureblob/a1531157863e43399965aab0ff826d81/",
+      "authentication": {
+        "type": "Raw",
+        "scheme": "Key",
+        "parameter": "@appsetting('azureblob_1-connectionKey')"
+      }
+    },
+    "azureblob_2": {
+      "api": {
+        "id": "/subscriptions/5f4f7e1e-9ef8-4204-9255-c3bdc6ae6632/providers/Microsoft.Web/locations/westcentralus/managedApis/azureblob"
+      },
+      "connection": {
+        "id": "/subscriptions/5f4f7e1e-9ef8-4204-9255-c3bdc6ae6632/resourceGroups/NIFE-Lego-Block-SMTP-RG/providers/Microsoft.Web/connections/azureblob-3"
+      },
+      "connectionRuntimeUrl": "https://6ca248de7b5e1432.16.common.logic-westcentralus.azure-apihub.net/apim/azureblob/e4e4daa0f5724ac587f1c934e80e2a3e/",
+      "authentication": {
+        "type": "Raw",
+        "scheme": "Key",
+        "parameter": "@appsetting('azureblob_2-connectionKey')"
+      }
+    }
+  }
+}
